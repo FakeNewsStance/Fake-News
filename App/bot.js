@@ -8,7 +8,7 @@ var config = require('./config')	//Import the config file for Oauth
 var T = new Twit(config);	//Create object of Twit
 
 var params_search = { 
-	q: '#News', 	//Search query keyword
+	q: '#news', 	//Search query keyword
 	count: 100 	//Count for number of tweeets to be fetched
 }
 var params_trends = { 
@@ -16,18 +16,21 @@ var params_trends = {
 	count: 10 		//Count for number of tweeets to be fetched
 }
 
+console.log('Searching for : ',params_search.q,'\n');
 T.get('search/tweets', params_search, displaySearchTweets);
 //T.get('trends/place', params_trends, displayTrendTweets);
 
 
 function displaySearchTweets(err,data,response)
 {
-	console.log(data);
+	//console.log(data);
 	var tweets = data.statuses;
 	for(var i=0;i<tweets.length;i++)
 	{
-		//console.log(tweets[i].user.name+" : "+tweets[i].text+"\n");
-		extraction_res = keyword_extractor.extract(tweets[i].text,{
+		console.log('\n<<Tweet>>\n')
+		console.log(tweets[i].user.name+" : "+tweets[i].text+"\n");
+		extraction_res = keyword_extractor.extract(tweets[i].text,
+		{
 			language:'english',
 			remove_digits:true,
 			remove_duplicates:false
@@ -43,12 +46,13 @@ function displaySearchTweets(err,data,response)
 				extraction_res_updated.push(cur_keyword);
 			}
 		}
-		
+		console.log(extraction_res_updated)
 		senctence = extraction_res_updated.join(' AND ');
 //		console.log(senctence,extraction_res_updated.length);
-		console.log(extraction_res_updated.slice(2))
+//		console.log(extraction_res_updated.slice(2))
 		fetched_promise = newsapi.fetch(extraction_res_updated.slice(2,5).join(' AND '));
 		fetched_promise.then(response=>{
+			console.log('\n<<Articles>>\n')
 			for(i=0;i<response.articles.length;i++)
 			{
 				cur = response.articles[i];
