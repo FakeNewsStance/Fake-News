@@ -4,22 +4,21 @@ console.log('The twitter bot is starting');
 
 var Twit = require('twit');	//Import the twit package
 var config = require('./config')	//Import the config file for Oauth
-
+var fs = require('file-system')
 var T = new Twit(config);	//Create object of Twit
 
 var params_search = { 
-	q: '#news', 	//Search query keyword
+	q: '#MandirLand', 	//Search query keyword
 	count: 100 	//Count for number of tweeets to be fetched
 }
 var params_trends = { 
 	id: 2295412,	//WOEID for Pune 
-	count: 10 		//Count for number of tweeets to be fetched
+	count: 100 		//Count for number of tweeets to be fetched
 }
 
 console.log('Searching for : ',params_search.q,'\n');
 T.get('search/tweets', params_search, displaySearchTweets);
 //T.get('trends/place', params_trends, displayTrendTweets);
-
 
 function displaySearchTweets(err,data,response)
 {
@@ -36,6 +35,8 @@ function displaySearchTweets(err,data,response)
 			remove_duplicates:false
 		});
 		
+		fs.writeFile('op.txt',tweets[i].text+"\n");
+		fs.appendFile('op.txt',tweets[i].entities.urls.url+"\n")
 		extraction_res_updated = [];
 		
 		for(i=0;i<extraction_res.length;i++)
@@ -57,6 +58,7 @@ function displaySearchTweets(err,data,response)
 			{
 				cur = response.articles[i];
 				console.log(cur.title+"\n");
+				fs.appendFile('op.txt',cur.url+"\n");
 			}
 		});
 		break;
@@ -73,7 +75,7 @@ function displayTrendTweets(err,data,response)
 		tweet_trends = data[i].trends;
 		for(var j=0;j<tweet_trends.length;j++)
 		{
-			//if(trends_list.length == 0 || trends_list.indexOf(tweet_trends[i].name) <= -1)
+			if(trends_list.length == 0 || trends_list.indexOf(tweet_trends[i].name) <= -1)
 			{
 				trends_list.push(tweet_trends[i].name);
 				console.log(tweet_trends[i].name+"\n");
