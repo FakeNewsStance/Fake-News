@@ -47,10 +47,10 @@ class TwitterStreamListener(StreamListener):
 
 class TwitterAuth:
     def __init__(self):
-        consumer_key = "oABtadyjO9vbohKky9e7wI7NW"
-        consumer_secret = "90lCVGeeNKJWKAQY9Ibzfhqckbbd6qMMZyer0PxfUwdXZUGtHF"
-        access_key = "2335422042-CysQB5XkTTR0FlWSkDfDumXHDkFDvk3ioMQCx8J"
-        access_secret = "lpPaVKQCtRfjdHYVRHYWh7b9ZWsLfIBxa7reDeBnE8CsO"
+        consumer_key = ""
+        consumer_secret = ""
+        access_key = ""
+        access_secret = ""
         auth = tweepy.OAuthHandler(consumer_key,consumer_secret)
         auth.set_access_token(access_key,access_secret)
         self.api = tweepy.API(auth)
@@ -58,7 +58,7 @@ class TwitterAuth:
 
 class NewsArticles:
     def __init__(self):
-        self.newsapi = NewsApiClient(api_key='df1f7fc8623f4afc99b489c41b4bdd55')
+        self.newsapi = NewsApiClient(api_key='')
         
     def get_urls(self,query):
         all_articles = self.newsapi.get_everything(q=query,
