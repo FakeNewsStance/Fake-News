@@ -4,6 +4,7 @@ import tweepy
 from tweepy.streaming import StreamListener
 import json
 import csv
+import api_creds
 from rake_nltk import Rake
 
 class StoreTweets:
@@ -47,10 +48,10 @@ class TwitterStreamListener(StreamListener):
 
 class TwitterAuth:
     def __init__(self):
-        consumer_key = ""
-        consumer_secret = ""
-        access_key = ""
-        access_secret = ""
+        consumer_key = api_creds.consumer_key
+        consumer_secret = api_creds.consumer_secret
+        access_key = api_creds.access_key
+        access_secret = api_creds.access_secret
         auth = tweepy.OAuthHandler(consumer_key,consumer_secret)
         auth.set_access_token(access_key,access_secret)
         self.api = tweepy.API(auth)
@@ -58,7 +59,7 @@ class TwitterAuth:
 
 class NewsArticles:
     def __init__(self):
-        self.newsapi = NewsApiClient(api_key='')
+        self.newsapi = NewsApiClient(api_key=api_creds.news_api_key)
         
     def get_urls(self,query):
         all_articles = self.newsapi.get_everything(q=query,
