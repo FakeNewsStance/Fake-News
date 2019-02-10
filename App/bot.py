@@ -6,7 +6,8 @@ import json
 import csv
 import api_creds
 from rake_nltk import Rake
-
+from summarizer import Summarizer
+from stance_model import Main
 class StoreTweets:
 
     def __init__(self):
@@ -26,6 +27,7 @@ class TwitterStreamListener(StreamListener):
         self.storeTweets = StoreTweets()
         self.rake = Rake()
         self.newsArticles = NewsArticles()
+        self.stance = Main()
         
     def on_data(self,data):
         try:
@@ -33,11 +35,17 @@ class TwitterStreamListener(StreamListener):
 #            self.storeTweets.store(data)
             self.rake.extract_keywords_from_text(data['text'])
             keywords = self.rake.get_ranked_phrases()
+            
+            print(keywords)
             sep = ' OR '
             query = sep.join(keywords)
             print(query)
             articles = self.newsArticles.get_articles(query)
             print(len(articles))
+            summarizer = Summarizer()
+            summaries = summarizer.summarize_article(articles)
+            main = Main()
+            main.test(data['text'],summaries)
         except Exception as e:
             print(e)
         return True
