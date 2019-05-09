@@ -4,11 +4,9 @@ from threading import Thread
 from flask import Flask, render_template, session, request
 from flask_socketio import SocketIO, emit, join_room, leave_room, \
     close_room, rooms, disconnect
-    
 from tweepy.streaming import StreamListener
 from tweepy import Stream
 import tweepy 
-
 from newsapi.newsapi_client import NewsApiClient
 from newspaper import Article
 import tweepy
@@ -21,44 +19,14 @@ from rake_nltk import Rake
 import time
 import numpy as np
 import pandas as pd
-from keras.preprocessing.text import Tokenizer
+#from keras.preprocessing.text import Tokenizer
 from sklearn.preprocessing import LabelEncoder     
-import keras
+#import keras
 import warnings
 from requirements import Summarizer,NewsArticles
 
-async_mode = None
 
-if async_mode is None:
-    try:
-        import eventlet
-        async_mode = 'eventlet'
-    except ImportError:
-        pass
-
-    if async_mode is None:
-        try:
-            from gevent import monkey
-            async_mode = 'gevent'
-        except ImportError:
-            pass
-
-    if async_mode is None:
-        async_mode = 'threading'
-
-    print('async_mode is ' + async_mode)
-
-# monkey patching is necessary because this application uses a background
-# thread
-if async_mode == 'eventlet':
-    import eventlet
-    eventlet.monkey_patch()
-elif async_mode == 'gevent':
-    from gevent import monkey
-    monkey.patch_all()
-
-
-class Main:
+class Model:
     
     def __init__(self):
        
@@ -124,12 +92,12 @@ class Main:
 
 
 
-class StdOutListener(StreamListener):
+class TwitterStreamListener(StreamListener):
     def __init__(self):
         
         self.rake = Rake()
         self.newsArticles = NewsArticles()
-        self.stance = Main() 
+        #self.stance = Model() 
     
     def get_score(self,tweet):
         try:
@@ -140,10 +108,10 @@ class StdOutListener(StreamListener):
             sep = ' OR '
             query = sep.join(keywords)
             print('QUERY : ',query)
-            articles = self.newsArticles.get_articles(query)
-            summarizer = Summarizer()
-            summaries = summarizer.summarize_article(articles)
-            score = self.stance.test(tweet,summaries)
+            #articles = self.newsArticles.get_articles(query)
+            #summarizer = Summarizer()
+            #summaries = summarizer.summarize_article(articles)
+            #score = self.stance.test(tweet,summaries)
             return score
         except Exception as e:
             print(e)
@@ -167,9 +135,42 @@ class StdOutListener(StreamListener):
         exit()
 
 
+############## EXECUTION STARTS FROM HERE ######################
+
+async_mode = None
+
+if async_mode is None:
+    try:
+        import eventlet
+        async_mode = 'eventlet'
+    except ImportError:
+        pass
+
+    if async_mode is None:
+        try:
+            from gevent import monkey
+            async_mode = 'gevent'
+        except ImportError:
+            pass
+
+    if async_mode is None:
+        async_mode = 'threading'
+
+    print('async_mode is ' + async_mode)
+
+# monkey patching is necessary because this application uses a background
+# thread
+if async_mode == 'eventlet':
+    import eventlet
+    eventlet.monkey_patch()
+elif async_mode == 'gevent':
+    from gevent import monkey
+    monkey.patch_all()
+
+
 def background_thread():
     """Example of how to send server generted events to clients."""
-    stream = Stream(auth, l,tweet_mode = 'extended')
+    stream = Stream(auth, StreamListener,tweet_mode = 'extended')
     keywords_list = ['Modi','Rahul Gandhi','Congress','BJP','Priyanka Gandhi','#LSPolls','#Elections2019']
     stream.filter(track=keywords_list, languages=["en"]) 
 
@@ -190,8 +191,6 @@ auth = tweepy.OAuthHandler(cred['consumer_key'], cred['consumer_secret'])
 auth.set_access_token(cred['access_key'], cred['access_secret'])
 
 
-
-
 @app.route('/')
 def index():
     global thread
@@ -204,7 +203,7 @@ def index():
 
 
 
-l = StdOutListener()
+StreamListener = TwitterStreamListener()
 
 if __name__ == '__main__':
-    socketio.run(app, debug=True, host='192.168.43.162',port=1234)
+    socketio.run(app, debug=True, host='192.168.0.17',port=1234)
