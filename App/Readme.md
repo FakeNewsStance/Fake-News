@@ -29,7 +29,7 @@ $ sudo pip install -r requirements.txt
 
 # Run the server
 ```
-$ python app.py 
+$ python bot.py 
 ```
 # Checkout the output in the browser. 
 ```
