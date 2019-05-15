@@ -98,7 +98,7 @@ class TwitterStreamListener(StreamListener):
         self.rake = Rake()
         self.newsArticles = NewsArticles()
         #self.stance = Model() 
-    
+
     def get_score(self,tweet):
         try:
             p.set_options(p.OPT.URL, p.OPT.EMOJI)
@@ -200,10 +200,19 @@ def index():
         thread.start()
     return render_template('index.html')
 
+@app.route('/mc')
+def manual_checking():
+    return render_template('man_check.html')
 
 
+@app.route('/handle_man_check',methods=['POST'])
+def handle_man_check():
+    global StreamListener
+    input_text = request.form['inp_txt']
+    score = StreamListener.get_score(input_text)
+    return input_text+'<br><br>Score:'+str(score)
 
 StreamListener = TwitterStreamListener()
 
 if __name__ == '__main__':
-    socketio.run(app, debug=True, host='192.168.0.17',port=1234)
+    socketio.run(app, debug=True, host='127.0.0.1',port=1234)
