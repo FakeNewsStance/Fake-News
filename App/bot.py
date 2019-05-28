@@ -103,7 +103,7 @@ class TwitterStreamListener(StreamListener):
 
     def get_score(self,tweet,data):
         try:
-            preprocessor.set_options(p.OPT.URL, p.OPT.EMOJI)
+            preprocessor.set_options(preprocessor.OPT.URL, preprocessor.OPT.EMOJI)
             tweet=preprocessor.clean(tweet)
             
             self.rake.extract_keywords_from_text(tweet)
@@ -120,8 +120,8 @@ class TwitterStreamListener(StreamListener):
             #summaries = summarizer.summarize_article(articles)
             #score = self.stance.test(tweet,summaries)
 
-            db.addTweet(data);
-            db.addArticles(data["id_str"],articles):
+            db.addTweet(data)
+            db.addArticles(data["id_str"],articles)
 #            db.addScore(data['id_str'],score)
             return score
         except Exception as e:
