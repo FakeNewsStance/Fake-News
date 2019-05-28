@@ -19,3 +19,4 @@ class Database:
 	def addScore(self,tweet_id,score):
 		self.col_results.insert_one({'tweet_id':tweet_id,'score':score})
 
+		
