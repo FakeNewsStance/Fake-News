@@ -14,7 +14,7 @@ from tweepy.streaming import StreamListener
 import json
 import csv
 import api_creds
-import preprocessor as p
+import preprocessor
 from rake_nltk import Rake
 import time
 import numpy as np
@@ -24,7 +24,7 @@ from sklearn.preprocessing import LabelEncoder
 #import keras
 import warnings
 from requirements import Summarizer,NewsArticles
-
+from Database import Database
 
 class Model:
     
@@ -60,7 +60,8 @@ class Model:
         self.tokenizer.fit_on_texts(dataset['Headline']+dataset['articleBody'])
         
         self.model = keras.models.load_model('model') 
-        
+    
+
     def test(self,tweet,articles):
         warnings.filterwarnings(action='ignore', category=DeprecationWarning)
         from keras.preprocessing.sequence import pad_sequences
@@ -93,43 +94,54 @@ class Model:
 
 
 class TwitterStreamListener(StreamListener):
+
     def __init__(self):
-        
         self.rake = Rake()
         self.newsArticles = NewsArticles()
         #self.stance = Model() 
 
-    def get_score(self,tweet):
+
+    def get_score(self,tweet,data):
         try:
-            p.set_options(p.OPT.URL, p.OPT.EMOJI)
-            tweet=p.clean(tweet)
+            preprocessor.set_options(p.OPT.URL, p.OPT.EMOJI)
+            tweet=preprocessor.clean(tweet)
+            
             self.rake.extract_keywords_from_text(tweet)
             keywords = self.rake.get_ranked_phrases()
             sep = ' OR '
             query = sep.join(keywords)
-            print('QUERY : ',query)
-            #articles = self.newsArticles.get_articles(query)
+            
+            articles = self.newsArticles.get_articles(query)
+            if len(articles) == 0:
+                print('No articles Found')
+                return 0
+
             #summarizer = Summarizer()
             #summaries = summarizer.summarize_article(articles)
             #score = self.stance.test(tweet,summaries)
+
+            db.addTweet(data);
+            db.addArticles(data["id_str"],articles):
+#            db.addScore(data['id_str'],score)
             return score
         except Exception as e:
             print(e)
-            return 999  
-            pass    
-    
+            return 0
+
+
     def on_data(self, data):
         try: 
             tweet = json.loads(data)
             text = tweet['extended_tweet']['full_text']
-            score = self.get_score(text)
-            socketio.emit('stream_channel',
-                      {'name':tweet['user']['name'],'data': text,'score': score, 'time': tweet[u'timestamp_ms']}, broadcast=True,
-                      namespace='/demo_streaming')
-        except: 
-            pass 
-    
-    
+            score = self.get_score(text,tweet)
+            if score != 0:
+                socketio.emit('stream_channel',
+                          {'name':tweet['user']['name'],'data': text,'score': score, 'time': tweet[u'timestamp_ms']}, broadcast=True,
+                          namespace='/demo_streaming')
+        except:
+            pass
+
+
     def on_error(self, status):
         print('Error status code', status)
         exit()
@@ -158,8 +170,7 @@ if async_mode is None:
 
     print('async_mode is ' + async_mode)
 
-# monkey patching is necessary because this application uses a background
-# thread
+# monkey patching is necessary because this application uses a background thread
 if async_mode == 'eventlet':
     import eventlet
     eventlet.monkey_patch()
@@ -180,6 +191,7 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app, async_mode=async_mode)
 thread = None
+db = Database()
 
 cred = {
             "access_key": api_creds.access_key, 
