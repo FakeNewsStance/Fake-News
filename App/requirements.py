@@ -19,7 +19,7 @@ class NewsArticles:
     def get_articles(self,query):
         urls = self.get_urls(query)
         articles = []
-        for url in urls[:10]:
+        for url in urls[:20]:
             try:
                 fetched_article = Article(url)
                 fetched_article.download()
