@@ -1,12 +1,14 @@
-from pymongo import Connection
-import time
+import pymongo
+client = pymongo.MongoClient("mongodb://localhost:27017/")
+cursor = client.fakenews.results.changes([
+    {'$match': {
+        'operationType': {'$in': ['insert', 'replace']}
+    }},
+    {'$match': {
+        'newDocument.n': {'$gte': 1}
+    }}
+])
 
-db = Connection().my_db
-coll = db.my_collection
-cursor = coll.find(tailable=True)
-while cursor.alive:
-    try:
-        doc = cursor.next()
-        print doc
-    except StopIteration:
-        time.sleep(1)
+# Loops forever.
+for change in cursor:
+    print(change['newDocument'])

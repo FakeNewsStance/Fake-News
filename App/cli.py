@@ -7,8 +7,6 @@ from newsapi.newsapi_client import NewsApiClient
 from newspaper import Article
 import tweepy
 from tweepy.streaming import StreamListener
-import json
-import csv
 import api_creds
 from rake_nltk import Rake
 import time
@@ -148,6 +146,20 @@ class TwitterStreamListener(StreamListener):
         exit()
 
 
+########## WEB CODE ###############
+@app.route('/')
+def index():
+    global thread
+    if thread is None:
+        thread = Thread(target=background_thread)
+        thread.daemon = True
+        thread.start()
+    return render_template('index.html')
+
+
+
+########### EXECUTION STARTS HERE ################
+
 #model = keras.models.load_model('model')
 db = Database()
 
@@ -164,3 +176,4 @@ StreamListener = TwitterStreamListener()
 stream = Stream(auth, StreamListener,tweet_mode = 'extended')
 keywords_list = ['Modi','Rahul Gandhi','Congress','BJP','Priyanka Gandhi','#LSPolls','#Elections2019']
 stream.filter(track=keywords_list, languages=["en"])
+
