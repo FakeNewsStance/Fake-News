@@ -105,6 +105,7 @@ class TwitterStreamListener(StreamListener):
         try:
 #            preprocessor.set_options(preprocessor.OPT.URL, preprocessor.OPT.EMOJI)
 #            tweet=preprocessor.clean(tweet)
+
             score = 777
             self.rake.extract_keywords_from_text(tweet)
             keywords = self.rake.get_ranked_phrases()
@@ -112,22 +113,24 @@ class TwitterStreamListener(StreamListener):
             query = sep.join(keywords)
             print('\n\nQuery:',query)
 
-            #db.addTweet(data)
-            #db.addArticles(data["id_str"],articles)
+            db.addTweet(data)
+            db.addArticles(data["id_str"],articles)
             
+            print('Number of Articles Found: ',len(articles))
             articles = self.newsArticles.get_articles(query)
+
             if len(articles) == 0:
-                print('\n\nNo articles Found')
                 return 0
 
             #summarizer = Summarizer()
             #summaries = summarizer.summarize_article(articles)
             #score = self.stance.test(tweet,summaries)
 
-#            db.addScore(data['id_str'],score)
+            db.addScore(data['id_str'],score)
             return score
+        
         except Exception as e:
-            print('\n\n'+e)
+            print('Error:'+e)
             return 0
 
 
@@ -138,10 +141,12 @@ class TwitterStreamListener(StreamListener):
             score = self.get_score(text,tweet)
             print(score)
             if score != 0:
-                print('\n\nGoing to web page')
+                print('Going to web page')
                 socketio.emit('stream_channel',
                           {'name':tweet['user']['name'],'data': text,'score': score, 'time': tweet[u'timestamp_ms']}, broadcast=True,
                           namespace='/demo_streaming')
+            else:
+                print('Not Going to web page')
         except:
             pass
 
