@@ -134,7 +134,7 @@ class TwitterStreamListener(StreamListener):
             tweet = json.loads(data)
             text = tweet['extended_tweet']['full_text']
             if text != '':
-                print('\n\n\n------------------------------------------')
+                print('\n\n\n--------------------------------------------------')
                 print('Tweet >>> ',text)
                 score = self.get_score(text,tweet)
                 if score != 0:

@@ -112,12 +112,12 @@ class TwitterStreamListener(StreamListener):
             sep = ' OR '
             query = sep.join(keywords)
             print('\n\nQuery:',query)
+            
+            articles = self.newsArticles.get_articles(query)
+            print('Number of Articles Found: ',len(articles))
 
             db.addTweet(data)
             db.addArticles(data["id_str"],articles)
-            
-            print('Number of Articles Found: ',len(articles))
-            articles = self.newsArticles.get_articles(query)
 
             if len(articles) == 0:
                 return 0
@@ -189,10 +189,10 @@ elif async_mode == 'gevent':
 
 
 def background_thread():
-    """Example of how to send server generted events to clients."""
+    """send server generted events to clients."""
     stream = Stream(auth, StreamListener,tweet_mode = 'extended')
     keywords_list = ['Modi','Rahul Gandhi','Congress','BJP','Priyanka Gandhi','#LSPolls','#Elections2019']
-    stream.filter(track=keywords_list, languages=["en"]) 
+    stream.filter(track=keywords_list, languages=["en"])
 
 
 app = Flask(__name__)
@@ -236,4 +236,4 @@ def handle_man_check():
 StreamListener = TwitterStreamListener()
 
 if __name__ == '__main__':
-    socketio.run(app, debug=True, host='127.0.0.1',port=1234)
+    socketio.run(app, debug=True, host='18.216.146.53',port=1234)
