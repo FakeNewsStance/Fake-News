@@ -12,10 +12,11 @@ from rake_nltk import Rake
 import time
 import numpy as np
 import pandas as pd
-#from keras.preprocessing.text import Tokenizer
+from keras.preprocessing.text import Tokenizer
 from sklearn.preprocessing import LabelEncoder     
-#import keras
+import keras
 import warnings
+import preprocessor
 from requirements import Summarizer,NewsArticles
 from Database import Database
 
@@ -61,28 +62,31 @@ class Model:
         sequences1 = self.tokenizer.texts_to_sequences([tweet])
         test1 = pad_sequences(sequences1, maxlen=self.MAX_SEQUENCE_LENGTH) 
         credibility_score=0
-        print('Mic Check')
         print('len of Articles : ',len(articles))
         
-        for article in articles:
-                sequences2 = self.tokenizer.texts_to_sequences([article])
-                test2 = pad_sequences(sequences2, maxlen=self.MAX_SEQUENCE_LENGTH)
-                y_pred = self.model.predict([test1, test2])
-                y_pred[y_pred > 0.5] = 1
-                y_pred[y_pred < 0.5] = 0
-                y_pred_num = np.argmax(y_pred)
-                stance = self.labelencoder_y.inverse_transform(y_pred_num)
-                if stance == "agree":
-                    credibility_score+=1
-                elif stance == "disagree":
-                    credibility_score-=1
-                elif stance == "discuss":
-                    credibility_score+=0.25
-                else:
-                    credibility_score+=0
-                print('\n\nY pred:',stance)
-        print('\n\n Credibility Score:',(credibility_score/len(articles)*100))
-        return credibility_score
+        try:
+            for article in articles:
+                    sequences2 = self.tokenizer.texts_to_sequences([article])
+                    test2 = pad_sequences(sequences2, maxlen=self.MAX_SEQUENCE_LENGTH)
+                    y_pred = self.model.predict([test1, test2])
+                    y_pred[y_pred > 0.5] = 1
+                    y_pred[y_pred < 0.5] = 0
+                    y_pred_num = np.argmax(y_pred)
+                    stance = self.labelencoder_y.inverse_transform(y_pred_num)
+                    if stance == "agree":
+                        credibility_score+=1
+                    elif stance == "disagree":
+                        credibility_score-=1
+                    elif stance == "discuss":
+                        credibility_score+=0.25
+                    else:
+                        credibility_score+=0
+                    print('\n\nY pred:',stance)
+            print('\n\n Credibility Score:',(credibility_score/len(articles)*100))
+            return credibility_score
+        except Exception as e:
+            print('Error in model :',e)
+            return 777
 
 
 
@@ -91,13 +95,13 @@ class TwitterStreamListener(StreamListener):
     def __init__(self):
         self.rake = Rake()
         self.newsArticles = NewsArticles()
-        #self.stance = Model() 
+        self.stance = Model() 
 
 
     def get_score(self,tweet,data):
         try:
-#            preprocessor.set_options(preprocessor.OPT.URL, preprocessor.OPT.EMOJI)
-#            tweet=preprocessor.clean(tweet)
+            preprocessor.set_options(preprocessor.OPT.URL, preprocessor.OPT.EMOJI)
+            tweet=preprocessor.clean(tweet)
 
             score = 777
             self.rake.extract_keywords_from_text(tweet)
@@ -109,22 +113,22 @@ class TwitterStreamListener(StreamListener):
             articles = self.newsArticles.get_articles(query)
             print('\nNumber of Articles Found >>> ',len(articles))
 
-            db.addTweet(data)
-            db.addArticles(data["id_str"],articles)
+            #db.addTweet(data)
+            #db.addArticles(data["id_str"],articles)
 
             if len(articles) == 0:
-                return 0
+                return 777
 
-            #summarizer = Summarizer()
-            #summaries = summarizer.summarize_article(articles)
-            #score = self.stance.test(tweet,summaries)
+            summarizer = Summarizer()
+            summaries = summarizer.summarize_article(articles)
+            score = self.stance.test(tweet,summaries)
 
-            db.addScore(data['id_str'],score)
+            #db.addScore(data['id_str'],score)
             return score
         
         except Exception as e:
             print('Error >>> '+e)
-            return 0
+            return 777
 
 
     def on_data(self, data):
@@ -135,8 +139,10 @@ class TwitterStreamListener(StreamListener):
                 print('\n\n\n--------------------------------------------------')
                 print('Tweet >>> ',text)
                 score = self.get_score(text,tweet)
-                if score != 0:
+                if score != 777:
                     print('\nScore >>> ',score)
+                else:
+                    print('\nNo Score available')
         except:
             pass
 
@@ -146,21 +152,10 @@ class TwitterStreamListener(StreamListener):
         exit()
 
 
-########## WEB CODE ###############
-@app.route('/')
-def index():
-    global thread
-    if thread is None:
-        thread = Thread(target=background_thread)
-        thread.daemon = True
-        thread.start()
-    return render_template('index.html')
-
-
 
 ########### EXECUTION STARTS HERE ################
 
-#model = keras.models.load_model('model')
+model = keras.models.load_model('model')
 db = Database()
 
 cred = {
