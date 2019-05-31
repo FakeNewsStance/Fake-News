@@ -9,8 +9,8 @@ results = db['results']
 total_tweets = tweets.count_documents({})
 total_tweets_with_articles = articles.count_documents({})
 total_tweets_with_score = results.count_documents({})
-score_max = results.find().sort({score:-1}).limit(1)
-score_min = results.find().sort({score:+1}).limit(1)
+score_max = results.find().sort({'score':-1}).limit(1)
+score_min = results.find().sort({'score':+1}).limit(1)
 
 print('\nTotal Tweets fetched :',total_tweets)
 print('Total tweets with articles :',total_tweets_with_articles)
