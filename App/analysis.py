@@ -1,6 +1,6 @@
-import pymongo as pm
+import pymongo
 
-client = pm.MongoClient("mongodb://localhost:27017/")
+client = pymongo.MongoClient("mongodb://localhost:27017/")
 db = client['fakenews']
 tweets = db['tweets']
 articles = db['articles']
