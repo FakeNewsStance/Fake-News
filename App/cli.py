@@ -109,12 +109,12 @@ class TwitterStreamListener(StreamListener):
             print('\nNumber of Articles Found >>> ',len(articles))
 
             db.addTweet(data)
-
+            
             if len(articles) == 0:
                 return 777
 			
-			db.addArticles(data["id_str"],articles)
-
+            db.addArticles(data["id_str"],articles)
+            
             summarizer = Summarizer()
             summaries = summarizer.summarize_article(articles)
             score = self.stance.test(tweet,summaries)
