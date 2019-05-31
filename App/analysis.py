@@ -11,7 +11,7 @@ try:
             [{'$match': {'operationType': 'insert'}}]) as stream:
         for insert_change in stream:
             print(insert_change)
-except pymongo.errors.PyMongoError:
+except Exception as e:
     # The ChangeStream encountered an unrecoverable error or the
     # resume attempt failed to recreate the cursor.
-    print('Error')
+    print(e)
