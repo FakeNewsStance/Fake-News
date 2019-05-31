@@ -14,4 +14,4 @@ try:
 except pymongo.errors.PyMongoError:
     # The ChangeStream encountered an unrecoverable error or the
     # resume attempt failed to recreate the cursor.
-    logging.error('...')
+    print('Error')
