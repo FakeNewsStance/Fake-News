@@ -53,18 +53,16 @@ class Model:
         self.tokenizer = Tokenizer(nb_words=self.MAX_NUM_WORDS)
         self.tokenizer.fit_on_texts(dataset['Headline']+dataset['articleBody'])
         
-        self.model = keras.models.load_model('model') 
+        self.model = keras.models.load_model('model')
     
 
     def test(self,tweet,articles):
-        warnings.filterwarnings(action='ignore', category=DeprecationWarning)
-        from keras.preprocessing.sequence import pad_sequences
-        sequences1 = self.tokenizer.texts_to_sequences([tweet])
-        test1 = pad_sequences(sequences1, maxlen=self.MAX_SEQUENCE_LENGTH) 
-        credibility_score=0
-        print('len of Articles : ',len(articles))
-        
         try:
+            warnings.filterwarnings(action='ignore', category=DeprecationWarning)
+            from keras.preprocessing.sequence import pad_sequences
+            sequences1 = self.tokenizer.texts_to_sequences([tweet])
+            test1 = pad_sequences(sequences1, maxlen=self.MAX_SEQUENCE_LENGTH)
+            credibility_score=0
             for article in articles:
                     sequences2 = self.tokenizer.texts_to_sequences([article])
                     test2 = pad_sequences(sequences2, maxlen=self.MAX_SEQUENCE_LENGTH)
@@ -72,7 +70,7 @@ class Model:
                     y_pred[y_pred > 0.5] = 1
                     y_pred[y_pred < 0.5] = 0
                     y_pred_num = np.argmax(y_pred)
-                    stance = self.labelencoder_y.inverse_transform(y_pred_num)
+                    stance = self.labelencoder_y.inverse_transform([y_pred_num])
                     if stance == "agree":
                         credibility_score+=1
                     elif stance == "disagree":
@@ -81,13 +79,10 @@ class Model:
                         credibility_score+=0.25
                     else:
                         credibility_score+=0
-                    print('\n\nY pred:',stance)
-            print('\n\n Credibility Score:',(credibility_score/len(articles)*100))
-            return credibility_score
+            return (credibility_score/len(articles)*100)
         except Exception as e:
             print('Error in model :',e)
             return 777
-
 
 
 class TwitterStreamListener(StreamListener):
@@ -113,8 +108,8 @@ class TwitterStreamListener(StreamListener):
             articles = self.newsArticles.get_articles(query)
             print('\nNumber of Articles Found >>> ',len(articles))
 
-            #db.addTweet(data)
-            #db.addArticles(data["id_str"],articles)
+            db.addTweet(data)
+            db.addArticles(data["id_str"],articles)
 
             if len(articles) == 0:
                 return 777
@@ -123,7 +118,7 @@ class TwitterStreamListener(StreamListener):
             summaries = summarizer.summarize_article(articles)
             score = self.stance.test(tweet,summaries)
 
-            #db.addScore(data['id_str'],score)
+            db.addScore(data['id_str'],score)
             return score
         
         except Exception as e:
@@ -140,7 +135,7 @@ class TwitterStreamListener(StreamListener):
                 print('Tweet >>> ',text)
                 score = self.get_score(text,tweet)
                 if score != 777:
-                    print('\nScore >>> ',score)
+                    print('\nCredibility Score >>> ',score)
                 else:
                     print('\nNo Score available')
         except:
@@ -150,7 +145,6 @@ class TwitterStreamListener(StreamListener):
     def on_error(self, status):
         print('Error status code', status)
         exit()
-
 
 
 ########### EXECUTION STARTS HERE ################
@@ -171,4 +165,3 @@ StreamListener = TwitterStreamListener()
 stream = Stream(auth, StreamListener,tweet_mode = 'extended')
 keywords_list = ['Modi','Rahul Gandhi','Congress','BJP','Priyanka Gandhi','#LSPolls','#Elections2019']
 stream.filter(track=keywords_list, languages=["en"])
-

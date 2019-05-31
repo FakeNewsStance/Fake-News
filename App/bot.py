@@ -19,9 +19,9 @@ from rake_nltk import Rake
 import time
 import numpy as np
 import pandas as pd
-#from keras.preprocessing.text import Tokenizer
+from keras.preprocessing.text import Tokenizer
 from sklearn.preprocessing import LabelEncoder     
-#import keras
+import keras
 import warnings
 from requirements import Summarizer,NewsArticles
 from Database import Database
@@ -63,33 +63,32 @@ class Model:
     
 
     def test(self,tweet,articles):
-        warnings.filterwarnings(action='ignore', category=DeprecationWarning)
-        from keras.preprocessing.sequence import pad_sequences
-        sequences1 = self.tokenizer.texts_to_sequences([tweet])
-        test1 = pad_sequences(sequences1, maxlen=self.MAX_SEQUENCE_LENGTH) 
-        credibility_score=0
-        print('Mic Check')
-        print('len of Articles : ',len(articles))
-        
-        for article in articles:
-                sequences2 = self.tokenizer.texts_to_sequences([article])
-                test2 = pad_sequences(sequences2, maxlen=self.MAX_SEQUENCE_LENGTH)
-                y_pred = self.model.predict([test1, test2])
-                y_pred[y_pred > 0.5] = 1
-                y_pred[y_pred < 0.5] = 0
-                y_pred_num = np.argmax(y_pred)
-                stance = self.labelencoder_y.inverse_transform(y_pred_num)
-                if stance == "agree":
-                    credibility_score+=1
-                elif stance == "disagree":
-                    credibility_score-=1
-                elif stance == "discuss":
-                    credibility_score+=0.25
-                else:
-                    credibility_score+=0
-                print('\n\nY pred:',stance)
-        print('\n\n Credibility Score:',(credibility_score/len(articles)*100))
-        return credibility_score
+        try:
+            warnings.filterwarnings(action='ignore', category=DeprecationWarning)
+            from keras.preprocessing.sequence import pad_sequences
+            sequences1 = self.tokenizer.texts_to_sequences([tweet])
+            test1 = pad_sequences(sequences1, maxlen=self.MAX_SEQUENCE_LENGTH)
+            credibility_score=0
+            for article in articles:
+                    sequences2 = self.tokenizer.texts_to_sequences([article])
+                    test2 = pad_sequences(sequences2, maxlen=self.MAX_SEQUENCE_LENGTH)
+                    y_pred = self.model.predict([test1, test2])
+                    y_pred[y_pred > 0.5] = 1
+                    y_pred[y_pred < 0.5] = 0
+                    y_pred_num = np.argmax(y_pred)
+                    stance = self.labelencoder_y.inverse_transform([y_pred_num])
+                    if stance == "agree":
+                        credibility_score+=1
+                    elif stance == "disagree":
+                        credibility_score-=1
+                    elif stance == "discuss":
+                        credibility_score+=0.25
+                    else:
+                        credibility_score+=0
+            return (credibility_score/len(articles)*100)
+        except Exception as e:
+            print('Error in model :',e)
+            return 777
 
 
 
@@ -98,13 +97,13 @@ class TwitterStreamListener(StreamListener):
     def __init__(self):
         self.rake = Rake()
         self.newsArticles = NewsArticles()
-        #self.stance = Model() 
+        self.stance = Model() 
 
 
     def get_score(self,tweet,data):
         try:
-#            preprocessor.set_options(preprocessor.OPT.URL, preprocessor.OPT.EMOJI)
-#            tweet=preprocessor.clean(tweet)
+            preprocessor.set_options(preprocessor.OPT.URL, preprocessor.OPT.EMOJI)
+            tweet=preprocessor.clean(tweet)
 
             score = 777
             self.rake.extract_keywords_from_text(tweet)
@@ -120,18 +119,18 @@ class TwitterStreamListener(StreamListener):
             db.addArticles(data["id_str"],articles)
 
             if len(articles) == 0:
-                return 0
+                return 777
 
-            #summarizer = Summarizer()
-            #summaries = summarizer.summarize_article(articles)
-            #score = self.stance.test(tweet,summaries)
+            summarizer = Summarizer()
+            summaries = summarizer.summarize_article(articles)
+            score = self.stance.test(tweet,summaries)
 
             db.addScore(data['id_str'],score)
             return score
         
         except Exception as e:
             print('Error:'+e)
-            return 0
+            return 777
 
 
     def on_data(self, data):
@@ -140,7 +139,7 @@ class TwitterStreamListener(StreamListener):
             text = tweet['extended_tweet']['full_text']
             score = self.get_score(text,tweet)
             print(score)
-            if score != 0:
+            if score != 777:
                 print('Going to web page')
                 socketio.emit('stream_channel',
                           {'name':tweet['user']['name'],'data': text,'score': score, 'time': tweet[u'timestamp_ms']}, broadcast=True,
@@ -196,7 +195,7 @@ def background_thread():
 
 
 app = Flask(__name__)
-#model = keras.models.load_model('model')
+model = keras.models.load_model('model')
 app.config['SECRET_KEY'] = 'secret!'
 socketio = SocketIO(app, async_mode=async_mode)
 thread = None
@@ -236,4 +235,4 @@ def handle_man_check():
 StreamListener = TwitterStreamListener()
 
 if __name__ == '__main__':
-    socketio.run(app, debug=True, host='18.216.146.53',port=1234)
+    socketio.run(app, debug=True, host='192.168.0.12',port=5000)
